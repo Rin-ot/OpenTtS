@@ -1,0 +1,32 @@
+import os, traceback, discord
+from json import load, dump
+from discord.ext import commands
+from dotenv import load_dotenv
+
+load_dotenv()
+token = os.getenv("TOKEN")
+prefix = os.getenv("PREFIX")
+
+class OpenTtS(commands.Bot):
+    def __init__(self, command_prefix, **kwargs):
+        super().__init__(command_prefix, **kwargs)
+
+        for cog in os.listdir("./cogs/"):
+            if cog.endswith(".py"):
+                try:
+                    self.load_extension(f"cogs.{cog[:-3]}")
+                except Exception:
+                    print(f"[Err] {traceback.format_exc()}")
+
+    async def on_ready(self):
+        print(f"[Log] Logged on as {self.user}.")
+        await self.change_presence(
+            activity = discord.Game(name = f"Ver.{open('version.txt').read()}"),
+        )
+
+if __name__ == '__main__':
+    bot = OpenTtS(
+        command_prefix = prefix, 
+        intents = discord.Intents.all(), 
+        )
+    bot.run(token)
