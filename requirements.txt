@@ -1,0 +1,8 @@
+traceback
+discord.py
+py-cord
+requests
+dotenv
+asyncio
+collections
+json

@@ -1,0 +1,6 @@
+.env
+__pycache__
+ffmpeg
+*.db
+tts/*
+tts_uri.json
