@@ -133,20 +133,25 @@ class Voice(commands.Cog):
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
-        if before.channel is None: return
+        if member.id == self.bot.user.id: return
+
+        elif before.channel is None: return
 
         elif after.channel is None: 
             cm = ChannelManager()
             ch = cm.get_text_id(before.channel.id)
             if ch is not None:
                 if len(before.channel.members) == 1:
-                    channel = self.bot.get_channel(ch)
-                    e = discord.Embed(
-                        title = "読み上げ終了", 
-                        description = f"通話からユーザーがいなくなったため、自動で読み上げを終了しました。", 
-                        color = 0x3bd37b
-                    )
-                    await channel.send(embed = e)
+                    try:
+                        channel = self.bot.get_channel(ch)
+                        e = discord.Embed(
+                            title = "読み上げ終了", 
+                            description = f"通話からユーザーがいなくなったため、自動で読み上げを終了しました。", 
+                            color = 0x3bd37b
+                        )
+                        await channel.send(embed = e)
+                    except:
+                        pass
                     voice = discord.utils.get(self.bot.voice_clients, guild = member.guild)
                     await voice.disconnect()
 
