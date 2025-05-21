@@ -34,6 +34,33 @@ class UserManager():
 
         return settings['voice']
 
+    def load(self, user_id: int) -> dict:
+        conn = sqlite3.connect("./users.db")
+        cur = conn.cursor()
+
+        cur.execute("SELECT data FROM user_settings WHERE user_id = ?", (user_id,))
+        row = cur.fetchone()
+        if row:
+            settings = json.loads(row[0])
+        else:
+            settings = self.default_dict
+
+        return settings
+
+    def write(self, user_id: int, data: dict):
+        conn = sqlite3.connect("./users.db")
+        cur = conn.cursor()
+
+        json_data = json.dumps(data)
+        cur.execute("""
+            INSERT INTO user_settings (user_id, data)
+            VALUES (?, ?)
+            ON CONFLICT(user_id) DO UPDATE SET data=excluded.data
+        """, (user_id, json_data))
+        conn.commit()
+        conn.close()
+        return True
+
     def read(self, user_id: int) -> str:
         conn = sqlite3.connect("./users.db")
         cur = conn.cursor()
@@ -53,3 +80,9 @@ class UserManager():
                 case _: 
                     pass
         return value_text
+
+    def update(self, user_id: int, updates: dict):
+        current_data = self.load(user_id)
+        current_data.update(updates)
+        self.write(user_id, current_data)
+        return True
