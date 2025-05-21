@@ -38,3 +38,11 @@ $ source OpenTtS_venv/bin/activate
 (OpenTtS_venv) $ python3 main.py
 ```
 
+### ⚠️ 注意
+
+OpenTtSは以下各種音声合成エンジン・ライブラリを使用しています。  
+これらを別プロセスで稼働させるか、サードパーティ製APIを使用しない場合読み上げに問題が生じることがあります。  
+>  
+１． [gTTS](https://pypi.org/project/gTTS/) (Google Text-to-Speach)  
+２． [VOICEVOX](https://voicevox.hiroshiba.jp/) (© Hiroshiba Kazuyuki)  
+３． [COEIROINK](https://coeiroink.com/) (© [Shirowanisan](https://x.com/shirowanisan))
