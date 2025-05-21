@@ -12,6 +12,7 @@ with open(f"./tts_uri.json", "r") as f:
     f.close()
 
 VOICEVOX_URI = URIS['VOICEVOX']
+COEIROINK_URI = URIS['COEIROINK']
 
 # Local Module
 from modules.guild import GuildManager
@@ -19,6 +20,7 @@ from modules.user import UserManager
 from modules.errors import play_error
 from modules.sound_ex import convert_mp3_to_wav
 from modules.channels import ChannelManager
+from modules.coeiroink import convert_speaker_id_to_uuid
 
 class MessageData():
     def __init__(self, 
@@ -178,7 +180,7 @@ class TextToSpeach(commands.Cog):
                         e = await play_error(message, f"{sound_path}")
                         if self.error_channel is not None:
                             channel = self.bot.get_channel(self.error_channel)
-                            await self.error_channel.send(embed = e)
+                            await channel.send(embed = e)
                         continue
 
                     audio = discord.FFmpegPCMAudio(sound_path, options = "-loglevel error")
@@ -220,6 +222,42 @@ class TextToSpeach(commands.Cog):
                     f.close()
 
             return f"./tts/{guild_id}.wav"
+
+        elif voice.startswith("coeiroink:"):
+            speaker_id = voice[len(f"coeiroink:"):]
+
+            try:
+                speaker_uuid = await convert_speaker_id_to_uuid(int(speaker_id))
+            except:
+                return f"Error: {traceback.format_exc()}"
+
+            query = {
+                "speakerUuid": speaker_uuid,
+                "styleId": int(speaker_id),
+                "text": text,
+                "speedScale": 1.0,
+                "volumeScale": 1.0,
+                "prosodyDetail": [],
+                "pitchScale": 0.0,
+                "intonationScale": 1.0,
+                "prePhonemeLength": 0.1,
+                "postPhonemeLength": 0.5,
+                "outputSamplingRate": 24000,
+            }
+
+            response = requests.post(
+                url = f"{COEIROINK_URI}/v1/synthesis",
+                headers={"Content-Type": "application/json"},
+                data=json.dumps(query),
+            )
+
+            if response.status_code != 200: return f"Error: {response.status_code}@SYN"
+            else:
+                with open(f"./tts/{guild_id}.wav", "wb") as f:
+                    f.write(response.content)
+                    f.close()
+
+                return f"./tts/{guild_id}.wav"
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
