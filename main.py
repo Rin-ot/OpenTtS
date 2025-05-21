@@ -19,6 +19,11 @@ class OpenTtS(commands.Bot):
                     print(f"[Err] {traceback.format_exc()}")
 
     async def on_ready(self):
+        from platform import system as _os
+        if _os() == "Linux":
+            os.system('clear')
+        elif _os() == "Windows":
+            os.system('cls')
         print(f"[Log] Logged on as {self.user}.")
         await self.change_presence(
             activity = discord.Game(name = f"Ver.{open('version.txt').read()}"),
