@@ -10,20 +10,25 @@ prefix = os.getenv("PREFIX")
 class OpenTtS(commands.Bot):
     def __init__(self, command_prefix, **kwargs):
         super().__init__(command_prefix, **kwargs)
+        self.load_error = False
 
         for cog in os.listdir("./cogs/"):
             if cog.endswith(".py"):
                 try:
                     self.load_extension(f"cogs.{cog[:-3]}")
                 except Exception:
+                    self.load_error = True
                     print(f"[Err] {traceback.format_exc()}")
 
     async def on_ready(self):
-        from platform import system as _os
-        if _os() == "Linux":
-            os.system('clear')
-        elif _os() == "Windows":
-            os.system('cls')
+        if self.load_error: pass
+        else:
+            from platform import system as _os
+            if _os() == "Linux":
+                os.system('clear')
+            elif _os() == "Windows":
+                os.system('cls')
+
         print(f"[Log] Logged on as {self.user}.")
         await self.change_presence(
             activity = discord.Game(name = f"Ver.{open('version.txt').read()}"),
