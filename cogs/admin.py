@@ -44,9 +44,11 @@ class AdminCog(commands.Cog):
     async def reload(self, ctx: commands.Context) -> None:
         fails = []
         empty_list = []
-        for extension in cogs:
+        for extension in os.listdir("./cogs"):
+            if not extension.endswith(".py"):
+                continue
             try:
-                self.bot.reload_extension(f"{extension}")
+                self.bot.reload_extension(f"cogs.{extension[:-3]}")
             except:
                 if extension in fails:
                     pass
@@ -76,6 +78,19 @@ class AdminCog(commands.Cog):
         e = discord.Embed(title = "再起動", description = f">>> 実行者： {ctx.author.mention} ({ctx.author})\n実行したチャンネル： {ctx.channel.mention}\n実行した時間： {datetime.datetime.now()}", color = 0xff0000)
         await ctx.send(embed = e)
         os.execv(sys.executable, ['python'] + sys.argv)
+
+    @commands.command()
+    @commands.is_owner()
+    async def vclist(self, ctx):
+        voice_clients = self.bot.voice_clients
+        if not voice_clients:
+            e = discord.Embed(title="ボイスチャンネル一覧", description="現在、OpenTtSを使用しているサーバーはありません。", color=0x00ff00)
+            await ctx.send(embed=e)
+            return
+
+        description = "\n".join([f"{vc.guild.name} - {vc.channel.mention}" for vc in voice_clients])
+        e = discord.Embed(title="ボイスチャンネル一覧", description=description, color=0x00ff00)
+        await ctx.send(embed=e)
 
 def setup(bot):
     bot.add_cog(AdminCog(bot))
