@@ -1,11 +1,13 @@
 from discord.ext import commands
 from discord.commands import slash_command
 from discord.ui import View, Button, Select
-import discord, json
+import discord
 
 # Local Modules
-from modules.voice_endpoints import voicevox_data, get_voicevox_speaker, coeiroink_data, get_coeiroink_speaker
+from modules.voice_endpoints import voicevox_data, get_voicevox_speaker, coeiroink_data, get_coeiroink_speaker, ojtalk_data
 from modules.user import UserManager
+
+um = UserManager()
 
 class UserSettings(commands.Cog):
     def __init__(self, bot):
@@ -15,16 +17,18 @@ class UserSettings(commands.Cog):
     async def menu(self, ctx):
         await ctx.defer(ephemeral = True)
 
+        current_voice = um.voice_value(ctx.author.id)
+
         e = discord.Embed(
             title = "音声設定",
-            description = "使用したい音声を選択してください：",
+            description = f"現在使用している音声： {current_voice}\n使用したい音声を選択してください：",
             color = 0x3bd37b
         )
         v = View()
         opt = [
             discord.SelectOption(
                 label = f"gTTS", 
-                description = f"©Google Text-to-Speach",
+                description = f"クレジット: ©Google Text-to-Speach",
                 value = f"gTTS:0",
             )
         ]
@@ -63,6 +67,23 @@ class UserSettings(commands.Cog):
                 inline = False
             )
 
+        _ojtalk = await ojtalk_data()
+        if _ojtalk[0] == 200:
+            opt.append(
+                discord.SelectOption(
+                    label = f"Open JTalk", 
+                    description = f"クレジット: © Open JTalk", 
+                    value = f"ojtalk"
+                )
+            )
+
+        else:
+            e.add_field(
+                name = f"Open JTalkに関するエラー", 
+                value = f"Open JTalkが使用できない環境のため、\n現在使用できません。", 
+                inline = False
+            )
+
         select = Select(
             placeholder = "音声を選択…",
             custom_id = f"select_voice",
@@ -82,7 +103,6 @@ class UserSettings(commands.Cog):
                 data = {
                     "voice": value
                 }
-                um = UserManager()
                 um.update(interaction.user.id, data)
 
                 if value.startswith("gtts"):
@@ -181,6 +201,47 @@ class UserSettings(commands.Cog):
                         v.add_item(sel)
                         await interaction.response.edit_message(view = v)
 
+                elif value == "ojtalk":
+                    _ojtalk = await ojtalk_data()
+                    if _ojtalk[0] != 200:
+                        e = discord.Embed(
+                            title = "エラー", 
+                            description = f"Open JTalkの動作が未検証です！", 
+                            color = 0xfa0909
+                        )
+                        await interaction.response.edit_message(embed = e, view = None)
+                        return
+
+                    else:
+                        v = View()
+                        opt = []
+                        charas = _ojtalk[1]
+                        for chara_id in range(0, len(charas)):
+                            if chara_id >= 25: break
+                            elif chara_id == 24:
+                                opt.append(
+                                    discord.SelectOption(
+                                        label = f"他の音声を使用する", 
+                                        value = f"next:25"
+                                    )
+                                )
+                            else:
+                                chara = list(charas.keys())[chara_id]
+                                opt.append(
+                                    discord.SelectOption(
+                                        label = f"{chara}", 
+                                        value = f"{chara}"
+                                    )
+                                )
+
+                        sel = Select(
+                            placeholder = f"キャラクターを選択…", 
+                            options = opt, 
+                            custom_id = f"select_ojtalk"
+                        )
+                        v.add_item(sel)
+                        await interaction.response.edit_message(view = v)
+
         elif interaction.custom_id == "select_voicevox":
             _voicevox = await voicevox_data()
             if _voicevox[0] != 200:
@@ -265,7 +326,6 @@ class UserSettings(commands.Cog):
             data = {
                 "voice": f"voicevox:{value}"
             }
-            um = UserManager()
             um.write(interaction.user.id, data)
 
             _voicevox = await voicevox_data()
@@ -371,7 +431,6 @@ class UserSettings(commands.Cog):
             data = {
                 "voice": f"coeiroink:{value}"
             }
-            um = UserManager()
             um.write(interaction.user.id, data)
 
             _coeiroink = await coeiroink_data()
@@ -392,6 +451,102 @@ class UserSettings(commands.Cog):
                 )
 
             await interaction.response.edit_message(embed = e, view = None)
+
+        elif interaction.custom_id == "select_ojtalk":
+            _ojtalk = await ojtalk_data()
+            if _ojtalk[0] != 200:
+                e = discord.Embed(
+                    title = "エラー", 
+                    description = f"Open JTalkの動作が未検証です！", 
+                    color = 0xfa0909
+                )
+                await interaction.response.edit_message(embed = e, view = None)
+                return
+
+            value = interaction.data['values'][0]
+            opt = []
+            charas = _ojtalk[1]
+            v = View()
+
+            if value.startswith("next:"):
+                _vlen = int(value[len("next:"):]) - 1
+
+                if len(charas) < _vlen:
+                    _vlen = len(charas) - 1
+                for chara_id in range(_vlen, len(charas)):
+                    if chara_id >= _vlen + 25: break
+                    elif chara_id == _vlen + 24:
+                        opt.append(
+                            discord.SelectOption(
+                                label = f"他の音声を使用する", 
+                                value = f"next:{_vlen + 24}"
+                            )
+                        )
+                    else:
+                        chara = charas[chara_id]
+                        opt.append(
+                            discord.SelectOption(
+                                label = f"{chara}", 
+                                value = f"{chara}"
+                            )
+                        )
+
+                sel = Select(
+                    placeholder = f"キャラクターを選択…", 
+                    options = opt, 
+                    custom_id = f"select_ojtalk"
+                )
+                v.add_item(sel)
+                await interaction.response.edit_message(view = v)
+
+            else:
+                for chara in charas:
+                    if chara != value: continue
+
+                    else:
+                        for style in charas[chara]:
+                            if style.endswith(".htsvoice"):
+                                opt.append(
+                                    discord.SelectOption(
+                                        label = f"{style[:-len(".htsvoice")]}", 
+                                        value = f"{style}"
+                                    )
+                                )
+                            else: continue
+
+                        sel = Select(
+                            placeholder = f"スタイルを選択…", 
+                            options = opt, 
+                            custom_id = f"select_ojtalk_style"
+                        )
+                        v.add_item(sel)
+                        await interaction.response.edit_message(view = v)
+
+                        return
+
+                e = discord.Embed(
+                    title = "エラー", 
+                    description = f"話者を検索中にエラーが発生しました。", 
+                    color = 0xfa0909
+                )
+                await interaction.response.edit_message(embed = e, view = None)
+                return
+
+        elif interaction.custom_id == "select_ojtalk_style":
+            value = interaction.data['values'][0]
+
+            data = {
+                "voice": f"ojtalk:{value[:-len(f".htsvoice")]}"
+            }
+            um.write(interaction.user.id, data)
+
+            e = discord.Embed(
+                title = "音声変更", 
+                description = f"音声を **{value[:-len(f".htsvoice")]}** に変更しました。", 
+                color = 0x33bbdd
+            )
+            await interaction.response.edit_message(embed = e, view = None)
+
 
 def setup(bot):
     bot.add_cog(UserSettings(bot))
