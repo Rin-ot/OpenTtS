@@ -121,6 +121,34 @@ class Voice(commands.Cog):
         else:
             await self.vc_disconnect(ctx)
 
+    @slash_command(name = f"force-join", description = f"ボイスチャンネルに強制的に接続します。")
+    async def force_join(self, ctx):
+        try:
+            await self.vc_connect(ctx)
+        except:
+            e = discord.Embed(
+                title = "エラー: 接続失敗",
+                description = f"エラーが発生しました。\n※何度もこのエラーが発生する場合、運営にお問い合わせください。", 
+                color = 0xfa0909
+            )
+            await ctx.respond(embed = e)
+
+            _er = discord.Embed(
+                title = "エラー: 強制接続失敗", 
+                description = f"ユーザ: 強制接続に失敗しました。", 
+                color = 0xfa0909
+            )
+            _er.add_field(
+                name = f"エラー内容", 
+                value = f"```py\n{traceback.format_exc()}\n```"
+            )
+            _er.add_field(
+                name = f"発生したサーバー", 
+                value = f"名前: `{ctx.guild.name}`\nID: `{ctx.guild.id}`\nチャンネル権限: {ctx.channel.permissions_for(ctx.guild.me)}"
+            )
+            error_channel = self.bot.get_channel(self.error_channel)
+            await error_channel.send(embed = _er)
+
     @commands.Cog.listener()
     async def on_message(self, message):
         if message.author.bot:
