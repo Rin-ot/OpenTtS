@@ -45,4 +45,5 @@ OpenTtSは以下各種音声合成エンジン・ライブラリを使用して�
 >  
 １． [gTTS](https://pypi.org/project/gTTS/) (Google Text-to-Speach)  
 ２． [VOICEVOX](https://voicevox.hiroshiba.jp/) (© Hiroshiba Kazuyuki)  
-３． [COEIROINK](https://coeiroink.com/) (© [Shirowanisan](https://x.com/shirowanisan))
+３． [COEIROINK](https://coeiroink.com/) (© [Shirowanisan](https://x.com/shirowanisan))  
+４． [Open JTalk](https://open-jtalk.sourceforge.net/) *本リポジトリ内ではapt版を使用 (© [名古屋工業大学](https://www.nitech.ac.jp/))
