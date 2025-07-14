@@ -1,4 +1,4 @@
-import requests, json
+import requests, json, subprocess, os
 
 with open(f"./tts_uri.json", "r") as f:
     URIS = json.load(f)
@@ -44,3 +44,23 @@ async def get_coeiroink_speaker(style_id: int):
                 else: continue
         else:
             return f"Unknown"
+
+async def ojtalk_data():
+    cmd = [
+        "open_jtalk", "-h"
+    ]
+    try:
+        subprocess.Popen(cmd, stdin = subprocess.PIPE, stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL)
+        data = {}
+        charas = os.listdir(f"/usr/share/hts-voice/")
+        for chara in charas:
+            data[f"{chara}"] = []
+            voices = os.listdir(f"/usr/share/hts-voice/{chara}/")
+            for voice in voices:
+                if voice.endswith(".htsvoice"):
+                    data[f"{chara}"].append(voice)
+
+        return (200, data)
+
+    except:
+        return (400, {})
