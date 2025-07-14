@@ -1,5 +1,5 @@
 from discord.ext import commands
-import discord, json, os, re, asyncio, traceback, requests
+import discord, json, os, re, asyncio, traceback, requests, subprocess
 from gtts import gTTS
 from collections import defaultdict
 
@@ -78,8 +78,6 @@ class TextToSpeach(commands.Cog):
                     vc_only_user = False
 
                 if message.content == "" and len(message.attachments) == 0:
-                    return
-                elif message.content.startswith(";") or message.content.startswith("；") or message.content.lower().startswith(prefix):
                     return
                 elif vc_only_user == True and message.author not in voice.channel.members and type(message) != MessageData:
                     return
@@ -259,6 +257,25 @@ class TextToSpeach(commands.Cog):
 
                 return f"./tts/{guild_id}.wav"
 
+        elif voice.startswith("ojtalk:"):
+            name = voice[len(f"ojtalk:"):]
+            path = f"./tts/{guild_id}.wav"
+            sps = name.split("_")
+            chara = sps[0]
+            cmd = [
+                "open_jtalk",
+                "-x", "/var/lib/mecab/dic/open-jtalk/naist-jdic",
+                "-m", f"/usr/share/hts-voice/{chara}/{name}.htsvoice",
+                "-r", "1.0",
+                "-ow", path
+            ]
+            res = subprocess.Popen(cmd, stdin = subprocess.PIPE)
+            res.stdin.write(text.encode())
+            res.stdin.close()
+            res.wait()
+
+            return f"./tts/{guild_id}.wav"
+
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         if message.author.bot:
@@ -270,6 +287,13 @@ class TextToSpeach(commands.Cog):
 
             cm = ChannelManager()
             if cm.get_text_id(voice.channel.id) is None or cm.get_text_id(voice.channel.id) != message.channel.id:
+                return
+
+            if message.content == ";" or message.content == "；":
+                voice.stop()
+                return
+
+            elif message.content.startswith(";") or message.content.startswith("；") or message.content.lower().startswith(prefix):
                 return
 
             if str(message.guild.id) not in self.messages: self.messages[str(message.guild.id)] = []
