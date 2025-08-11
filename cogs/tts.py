@@ -174,11 +174,10 @@ class TextToSpeach(commands.Cog):
                     user_voice = um.voice_value(message.author.id)
                     sound_path = await self.read_text(message.content, user_voice, message.guild.id)
 
-                    if sound_path.startswith("Error:"):
-                        e = await play_error(message, f"{sound_path}")
+                    if type(sound_path) == discord.Embed:
                         if self.error_channel is not None:
                             channel = self.bot.get_channel(self.error_channel)
-                            await channel.send(embed = e)
+                            await channel.send(embed = sound_path)
                         continue
 
                     audio = discord.FFmpegPCMAudio(sound_path, options = "-loglevel error")
@@ -197,8 +196,13 @@ class TextToSpeach(commands.Cog):
                 tts.save(f"./tts/{guild_id}.mp3")
                 sound_path = convert_mp3_to_wav(f"./tts/{guild_id}.mp3")
                 return sound_path
-            except Exception as e:
-                return f"Error: {e}"
+            except Exception as exc:
+                e = discord.Embed(
+                    title = "読み上げエラー",
+                    description = f"gTTSでの音声合成中にエラーが発生しました： ```py\n{exc}```",
+                    color = discord.Color.red()
+                )
+                return e
 
         elif voice.startswith("voicevox:"):
             speaker_id = voice[len(f"voicevox:"):]
@@ -208,12 +212,61 @@ class TextToSpeach(commands.Cog):
             }
             audio_query = requests.post(url = f"{VOICEVOX_URI}/audio_query?text={text}&speaker={speaker_id}", 
                                         headers = header)
-            if audio_query.status_code != 200: return f"Error: {audio_query.status_code}@AQ"
+            if audio_query.status_code != 200: 
+                e = discord.Embed(
+                    title = "読み上げエラー", 
+                    description = f"Audio Queryの取得中にエラーが発生しました： {audio_query.status_code}", 
+                    color = discord.Color.red()
+                )
+                e.add_field(
+                    name = f"エラー", 
+                    value = f"```py\n{audio_query.text}```",
+                    inline = False
+                )
+                e.add_field(
+                    name = f"音声ID", 
+                    value = f"{speaker_id}",
+                    inline = False
+                )
+                e.add_field(
+                    name = f"メッセージ内容", 
+                    value = f"{text}",
+                    inline = False
+                )
+                e.set_footer(
+                    text = f"Error: VOICEVOX"
+                )
+                return e
+
             else: aq = audio_query.json()
 
             synthesis = requests.post(url = f"{VOICEVOX_URI}/synthesis?speaker={speaker_id}", 
                                         headers = header, json = aq)
-            if synthesis.status_code != 200: return f"Error: {synthesis.status_code}@SYN"
+            if synthesis.status_code != 200: 
+                e = discord.Embed(
+                    title = "読み上げエラー", 
+                    description = f"Synthesisの作成中にエラーが発生しました： {audio_query.status_code}", 
+                    color = discord.Color.red()
+                )
+                e.add_field(
+                    name = f"エラー", 
+                    value = f"```py\n{audio_query.text}```",
+                    inline = False
+                )
+                e.add_field(
+                    name = f"音声ID", 
+                    value = f"{speaker_id}",
+                    inline = False
+                )
+                e.add_field(
+                    name = f"メッセージ内容", 
+                    value = f"{text}",
+                    inline = False
+                )
+                e.set_footer(
+                    text = f"Error: VOICEVOX"
+                )
+                return e
             else: 
                 with open(f"./tts/{guild_id}.wav", "wb") as f:
                     f.write(synthesis.content)
@@ -227,7 +280,12 @@ class TextToSpeach(commands.Cog):
             try:
                 speaker_uuid = await convert_speaker_id_to_uuid(int(speaker_id))
             except:
-                return f"Error: {traceback.format_exc()}"
+                e = discord.Embed(
+                    title = "読み上げエラー",
+                    description = f"Speaker IDの変換中にエラーが発生しました： ```py\n{traceback.format_exc()}```",
+                    color = discord.Color.red()
+                )
+                return e
 
             query = {
                 "speakerUuid": speaker_uuid,
@@ -249,7 +307,31 @@ class TextToSpeach(commands.Cog):
                 data=json.dumps(query),
             )
 
-            if response.status_code != 200: return f"Error: {response.status_code}@SYN"
+            if response.status_code != 200: 
+                e = discord.Embed(
+                    title = "読み上げエラー",
+                    description = f"音声合成中にエラーが発生しました： {response.status_code}",
+                    color = discord.Color.red()
+                )
+                e.add_field(
+                    name = f"エラー",
+                    value = f"```py\n{response.text}```",
+                    inline = False
+                )
+                e.add_field(
+                    name = f"音声ID",
+                    value = f"{speaker_id}",
+                    inline = False
+                )
+                e.add_field(
+                    name = f"メッセージ内容",
+                    value = f"{text}",
+                    inline = False
+                )
+                e.set_footer(
+                    text = f"Error: COEIROINK"
+                )
+                return e
             else:
                 with open(f"./tts/{guild_id}.wav", "wb") as f:
                     f.write(response.content)
