@@ -31,7 +31,7 @@ class OpenTtS(commands.Bot):
 
         print(f"[Log] Logged on as {self.user}.")
         await self.change_presence(
-            activity = discord.Game(name = f"Ver.{open('version.txt').read()}"),
+            activity = discord.Game(name = f"Ver: {open('version.txt').read()}"),
         )
 
 if __name__ == '__main__':
