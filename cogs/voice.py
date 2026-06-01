@@ -16,7 +16,7 @@ class Voice(commands.Cog):
         self.bot = bot
         self.error_channel = int(os.getenv("ERROR_CHANNEL"))
 
-    async def vc_connect(self, ctx, value = None):
+    async def vc_connect(self, ctx, value = None, force: bool = False):
         if value is None:
             if ctx.author.voice is None:
                 e = discord.Embed(
@@ -30,12 +30,43 @@ class Voice(commands.Cog):
             voice_channel = ctx.author.voice.channel
             voice = discord.utils.get(self.bot.voice_clients, guild = ctx.guild)
             if voice is not None:
-                e = discord.Embed(
-                    title = "エラー", 
-                    description = f"既に別のVCに接続しています！", 
-                    color = 0xfa0909
-                )
-                await ctx.respond(embed = e, ephemeral = True)
+                if force:
+                    try:
+                        cm = ChannelManager()
+                        cm.register_voices(voice_channel.id, ctx.channel.id)
+                        voice = await voice_channel.connect()
+                        e = discord.Embed(
+                            title = "接続完了", 
+                            description = f"ボイスチャンネルに接続しました。\n接続チャンネル: {voice_channel.mention}",
+                            color = 0x3bd37b
+                        )
+                        await ctx.respond(embed = e)
+                        await connect_sound(ctx.guild.id, voice)
+                    except:
+                        e = discord.Embed(
+                            title = "エラー", 
+                            description = f"ボイスチャンネルに接続できませんでした。", 
+                            color = 0xfa0909
+                        )
+                        await ctx.respond(embed = e, ephemeral = True)
+
+                        ve = discord.Embed(
+                            title = "エラー: 接続失敗", 
+                            description = f"```py\n{traceback.format_exc()}\n```",
+                            color = 0xfa0909
+                        )
+                        channel = self.bot.get_channel(self.error_channel)
+                        await channel.send(embed = ve)
+                        return
+                        
+                else:
+                    e = discord.Embed(
+                        title = "エラー", 
+                        description = f"既に別のVCに接続しています！", 
+                        color = 0xfa0909
+                    )
+                    await ctx.respond(embed = e, ephemeral = True)
+                    return
             else:
                 try:
                     cm = ChannelManager()
@@ -124,7 +155,7 @@ class Voice(commands.Cog):
     @slash_command(name = f"force-join", description = f"ボイスチャンネルに強制的に接続します。")
     async def force_join(self, ctx):
         try:
-            await self.vc_connect(ctx)
+            await self.vc_connect(ctx, force = True)
         except:
             e = discord.Embed(
                 title = "エラー: 接続失敗",
