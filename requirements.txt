@@ -1,6 +1,7 @@
 traceback
 discord.py
 py-cord
+py-cord[voice]
 requests
 dotenv
 asyncio
