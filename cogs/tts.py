@@ -110,7 +110,7 @@ class TextToSpeach(commands.Cog):
                     for user_id in match:
                         user = await message.guild.fetch_member(user_id)
                         
-                        if guild_settings['vc_nickname'] == True:
+                        if guild_settings.get('vc_nickname', True) == True:
                             user_name = f'、{user.display_name}、'
                         
                         else:
@@ -146,8 +146,8 @@ class TextToSpeach(commands.Cog):
                                 _v = True
                         message.content = message.content[:-1] + f'、ワラ{_p} '
 
-                    if os.path.isfile(f"/disk1/YomiCanary/words/{message.guild.id}.json") is True:
-                        with open(f"/disk1/YomiCanary/words/{message.guild.id}.json", "r") as f:
+                    if os.path.isfile(f"./dict/{message.guild.id}.json") is True:
+                        with open(f"./dict/{message.guild.id}.json", "r") as f:
                             words = json.load(f)
                             f.close()
                         for w in list(words.keys()):
@@ -168,7 +168,7 @@ class TextToSpeach(commands.Cog):
                     if len(message.content) > 100:
                         message.content = message.content[:100] + "以下略"
 
-                    if len(message.attachments) != 0 and guild_settings['vc_attachments'] == True:
+                    if len(message.attachments) != 0 and guild_settings.get('vc_attachments', True) == True:
                         message.content = message.content + "、ファイルが送信されました"
 
                     user_voice = um.voice_value(message.author.id)
