@@ -4,3 +4,6 @@ ffmpeg
 *.db
 tts/*
 tts_uri.json
+
+dict/*
+version.txt
